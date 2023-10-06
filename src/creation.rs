@@ -1,8 +1,8 @@
 use polynomen::Poly;
 
-use crate::{cryptography, Proof};
+use crate::{cryptography, Challenge, Proof, Public};
 
-pub(crate) fn prove(public: &crate::Public, challenge: &crate::Challenge) -> Proof {
+pub(crate) fn prove(public: &Public, challenge: &Challenge) -> Proof {
     let h: Poly<f64> = &public.p / &public.t;
     return Proof {
         encrypted_p_at_s: cryptography::homomorphic_eval_polynomial(

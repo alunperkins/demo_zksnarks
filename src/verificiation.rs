@@ -3,7 +3,7 @@ use num_bigint::BigUint;
 
 use crate::{
     cryptography::{encrypt, EncryptedNumber},
-    Challenge, NumberType, VerifierState, POLYNOMIAL_DEGREE,
+    Challenge, NumberType, Public, VerifierState, POLYNOMIAL_DEGREE,
 };
 
 pub(crate) fn choose_random_s() -> f64 {
@@ -11,7 +11,7 @@ pub(crate) fn choose_random_s() -> f64 {
 }
 
 pub(crate) fn verify(
-    public: &crate::Public,
+    public: &Public,
     verifier_state: &VerifierState,
     _challenge: &crate::Challenge,
     proof: &crate::Proof,
@@ -23,7 +23,7 @@ pub(crate) fn verify(
             .times_by(t_at_s, &public.encryption_parameters);
 }
 
-pub(crate) fn create_challenge(public: &crate::Public) -> CreateChallengeResult {
+pub(crate) fn create_challenge(public: &Public) -> CreateChallengeResult {
     let s = choose_random_s();
 
     let encrypted_powers: Vec<EncryptedNumber> = (0..POLYNOMIAL_DEGREE)
@@ -44,6 +44,6 @@ pub(crate) fn create_challenge(public: &crate::Public) -> CreateChallengeResult 
 }
 
 pub(crate) struct CreateChallengeResult {
-    pub challenge: Challenge,
-    pub verifier_state: VerifierState,
+    pub(crate) challenge: Challenge,
+    pub(crate) verifier_state: VerifierState,
 }

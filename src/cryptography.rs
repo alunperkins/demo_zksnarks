@@ -6,12 +6,12 @@ use polynomen::Poly;
 
 use crate::BigNumberType;
 
-pub struct EncryptionParameters {
+pub(crate) struct EncryptionParameters {
     modulus: BigNumberType,
     g: BigNumberType,
 }
 
-pub fn get_encryption_parameters() -> EncryptionParameters {
+pub(crate) fn get_encryption_parameters() -> EncryptionParameters {
     let modulus: BigNumberType =
         BigUint::parse_bytes(b"31", 10).expect("hard-coded number string should be valid");
     let g: BigNumberType =
@@ -24,13 +24,13 @@ pub fn get_encryption_parameters() -> EncryptionParameters {
 
 /// Make encrypted and clear numbers be different types for stronger compile-time checking
 #[derive(PartialEq, Eq, Hash)]
-pub struct EncryptedNumber {
+pub(crate) struct EncryptedNumber {
     val: BigNumberType,
 }
 
 impl EncryptedNumber {
     /// homomorphically add two encrypted numbers
-    pub fn plus(
+    pub(crate) fn plus(
         &self,
         other: &EncryptedNumber,
         encryption_parameters: &EncryptionParameters,
@@ -41,7 +41,7 @@ impl EncryptedNumber {
     }
 
     /// homomorphically multiply an encrypted number by a cleartext number
-    pub fn times_by(
+    pub(crate) fn times_by(
         &self,
         multiplier: f64, // must be integer-valued
         encryption_parameters: &EncryptionParameters,
@@ -56,7 +56,7 @@ impl EncryptedNumber {
     }
 }
 
-pub fn encrypt(
+pub(crate) fn encrypt(
     encryption_parameters: &EncryptionParameters,
     cleartext: BigNumberType,
 ) -> EncryptedNumber {
@@ -67,7 +67,7 @@ pub fn encrypt(
     };
 }
 
-pub fn homomorphic_eval_polynomial(
+pub(crate) fn homomorphic_eval_polynomial(
     encryption_parameters: &EncryptionParameters,
     encrypted_s_powers: &Vec<EncryptedNumber>,
     polynomial: &Poly<f64>,
