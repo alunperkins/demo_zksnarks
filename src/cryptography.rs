@@ -28,6 +28,34 @@ pub struct EncryptedNumber {
     val: BigNumberType,
 }
 
+impl EncryptedNumber {
+    /// homomorphically add two encrypted numbers
+    pub fn plus(
+        &self,
+        other: &EncryptedNumber,
+        encryption_parameters: &EncryptionParameters,
+    ) -> EncryptedNumber {
+        return EncryptedNumber {
+            val: (&self.val * &other.val).rem(&encryption_parameters.modulus),
+        };
+    }
+
+    /// homomorphically multiply an encrypted number by a cleartext number
+    pub fn times_by(
+        &self,
+        multiplier: f64, // must be integer-valued
+        encryption_parameters: &EncryptionParameters,
+    ) -> EncryptedNumber {
+        return EncryptedNumber {
+            val: self.val.modpow(
+                &BigUint::from_f64(multiplier)
+                    .expect("homomorphic_multiply should have multiplier be integer-valued..."),
+                &encryption_parameters.modulus,
+            ),
+        };
+    }
+}
+
 pub fn encrypt(
     encryption_parameters: &EncryptionParameters,
     cleartext: BigNumberType,
@@ -48,33 +76,7 @@ pub fn homomorphic_eval_polynomial(
         .coeffs()
         .into_iter()
         .zip(encrypted_s_powers)
-        .map(|(coeff, encrypted_s_power)| {
-            homomorphic_multiply(encryption_parameters, encrypted_s_power, coeff)
-        })
-        .reduce(|n1, n2| homomorphic_add(encryption_parameters, &n1, &n2))
-        .unwrap();
-}
-
-pub fn homomorphic_add(
-    encryption_parameters: &EncryptionParameters,
-    ciphertext1: &EncryptedNumber,
-    ciphertext2: &EncryptedNumber,
-) -> EncryptedNumber {
-    return EncryptedNumber {
-        val: (&ciphertext1.val * &ciphertext2.val).rem(&encryption_parameters.modulus),
-    };
-}
-
-pub fn homomorphic_multiply(
-    encryption_parameters: &EncryptionParameters,
-    ciphertext: &EncryptedNumber,
-    multiplier: f64,
-) -> EncryptedNumber {
-    return EncryptedNumber {
-        val: ciphertext.val.modpow(
-            &BigUint::from_f64(multiplier)
-                .expect("homomorphic_multiply should have multiplier be integer-valued..."),
-            &encryption_parameters.modulus,
-        ),
-    };
+        .map(|(coeff, encrypted_s_power)| encrypted_s_power.times_by(coeff, encryption_parameters))
+        .reduce(|n1, n2| n1.plus(&n2, encryption_parameters))
+        .expect("Polynomial not empty");
 }

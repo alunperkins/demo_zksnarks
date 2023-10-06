@@ -2,7 +2,7 @@ use num::FromPrimitive;
 use num_bigint::BigUint;
 
 use crate::{
-    cryptography::{self, encrypt, EncryptedNumber},
+    cryptography::{encrypt, EncryptedNumber},
     Challenge, NumberType, VerifierState, POLYNOMIAL_DEGREE,
 };
 
@@ -18,11 +18,9 @@ pub(crate) fn verify(
 ) -> bool {
     let t_at_s = public.t.eval(&verifier_state.s);
     return proof.encrypted_p_at_s
-        == cryptography::homomorphic_multiply(
-            &public.encryption_parameters,
-            &proof.encrypted_h_at_s,
-            t_at_s,
-        );
+        == proof
+            .encrypted_h_at_s
+            .times_by(t_at_s, &public.encryption_parameters);
 }
 
 pub(crate) fn create_challenge(public: &crate::Public) -> CreateChallengeResult {
