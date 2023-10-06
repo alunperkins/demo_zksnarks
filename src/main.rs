@@ -3,6 +3,7 @@ mod cryptography;
 mod polynomial_utils;
 mod verificiation;
 
+use cryptography::EncryptedNumber;
 use num::BigUint;
 use polynomen::Poly;
 
@@ -37,16 +38,7 @@ fn main() {
         verifier_state,
     } = verificiation::create_challenge(&public);
 
-    print!("challenge.encrypted_s_powers = ");
-    challenge
-        .encrypted_s_powers
-        .iter()
-        .for_each(|x| print!("{}, ", x));
-    println!("");
-
     let proof = creation::prove(&public, &challenge);
-    println!("proof.encrypted_p_at_s = {}", &proof.encrypted_p_at_s);
-    println!("proof.encrypted_h_at_s = {}", &proof.encrypted_h_at_s);
 
     let validation = verificiation::verify(&public, &verifier_state, &challenge, &proof);
 
@@ -64,10 +56,10 @@ struct Public {
 }
 
 struct Challenge {
-    encrypted_s_powers: Vec<BigNumberType>,
+    encrypted_s_powers: Vec<EncryptedNumber>,
 }
 
 struct Proof {
-    encrypted_p_at_s: BigNumberType,
-    encrypted_h_at_s: BigNumberType,
+    encrypted_p_at_s: EncryptedNumber,
+    encrypted_h_at_s: EncryptedNumber,
 }

@@ -2,12 +2,11 @@ use num::FromPrimitive;
 use num_bigint::BigUint;
 
 use crate::{
-    cryptography::{self, encrypt},
-    BigNumberType, Challenge, NumberType, VerifierState, POLYNOMIAL_DEGREE,
+    cryptography::{self, encrypt, EncryptedNumber},
+    Challenge, NumberType, VerifierState, POLYNOMIAL_DEGREE,
 };
 
 pub(crate) fn choose_random_s() -> f64 {
-    // return BigUint::parse_bytes(b"17", 10).unwrap();
     return 17.0;
 }
 
@@ -29,8 +28,12 @@ pub(crate) fn verify(
 pub(crate) fn create_challenge(public: &crate::Public) -> CreateChallengeResult {
     let s = choose_random_s();
 
-    let encrypted_powers: Vec<BigNumberType> = (0..POLYNOMIAL_DEGREE)
-        .map(|k: NumberType| BigUint::from_f64(s).unwrap().pow(k))
+    let encrypted_powers: Vec<EncryptedNumber> = (0..POLYNOMIAL_DEGREE)
+        .map(|k: NumberType| {
+            BigUint::from_f64(s)
+                .expect("Int range should be integer-valued")
+                .pow(k)
+        })
         .map(|s_to_kth_power: BigUint| encrypt(&public.encryption_parameters, s_to_kth_power))
         .collect();
 
