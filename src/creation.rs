@@ -25,6 +25,11 @@ impl<'a> Prover<'a> {
                 &challenge.encrypted_s_powers,
                 &h,
             ),
+            encrypted_alpha_times_p_at_s: cryptography::homomorphic_eval_polynomial(
+                &self.public.encryption_parameters,
+                &challenge.encrypted_alpha_times_s_powers,
+                &self.p,
+            ),
         };
     }
 }

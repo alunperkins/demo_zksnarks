@@ -1,8 +1,9 @@
 mod creation;
 mod cryptography;
-mod polynomial_utils;
+mod print_utils;
 mod verificiation;
-use crate::{creation::Prover, polynomial_utils::printpoly, verificiation::CreateChallengeResult};
+
+use crate::{creation::Prover, print_utils::printpoly, verificiation::CreateChallengeResult};
 use cryptography::EncryptedNumber;
 use num::BigUint;
 use polynomen::Poly;
@@ -40,6 +41,7 @@ fn main() {
 
 struct VerifierState {
     s: f64,
+    alpha: f64,
 }
 
 struct Public {
@@ -49,9 +51,11 @@ struct Public {
 
 struct Challenge {
     encrypted_s_powers: Vec<EncryptedNumber>,
+    encrypted_alpha_times_s_powers: Vec<EncryptedNumber>,
 }
 
 struct Proof {
-    encrypted_p_at_s: EncryptedNumber,
     encrypted_h_at_s: EncryptedNumber,
+    encrypted_p_at_s: EncryptedNumber,
+    encrypted_alpha_times_p_at_s: EncryptedNumber,
 }
