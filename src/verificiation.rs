@@ -3,7 +3,7 @@ use num_bigint::BigUint;
 
 use crate::{
     cryptography::{encrypt, EncryptedNumber},
-    Challenge, NumberType, Public, VerifierState, POLYNOMIAL_DEGREE,
+    Challenge, Public, VerifierState, POLYNOMIAL_DEGREE,
 };
 
 pub(crate) fn choose_random_s() -> f64 {
@@ -27,7 +27,7 @@ pub(crate) fn create_challenge(public: &Public) -> CreateChallengeResult {
     let s = choose_random_s();
 
     let encrypted_powers: Vec<EncryptedNumber> = (0..POLYNOMIAL_DEGREE)
-        .map(|k: NumberType| {
+        .map(|k| {
             BigUint::from_f64(s)
                 .expect("Int range should be integer-valued")
                 .pow(k)

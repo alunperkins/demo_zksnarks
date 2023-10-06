@@ -2,22 +2,14 @@ mod creation;
 mod cryptography;
 mod polynomial_utils;
 mod verificiation;
-
+use crate::{creation::Prover, polynomial_utils::printpoly, verificiation::CreateChallengeResult};
 use cryptography::EncryptedNumber;
 use num::BigUint;
 use polynomen::Poly;
 
-// use polynomials::poly;
-use crate::{polynomial_utils::printpoly, verificiation::CreateChallengeResult};
-
-type NumberType = u32;
 type BigNumberType = BigUint;
 
 const POLYNOMIAL_DEGREE: u32 = 5;
-
-// fn big(n: NumberType) -> BigNumberType {
-//     return BigUint::try_from(n).unwrap();
-// }
 
 fn main() {
     let t: Poly<f64> = Poly::new_from_coeffs(&[3.0, 4.0, 5.0]);
@@ -28,17 +20,18 @@ fn main() {
     printpoly(&p);
 
     let public = Public {
-        p: &t * &h,
         t: t,
         encryption_parameters: cryptography::get_encryption_parameters(),
     };
+
+    let prover = Prover::new(&public, p);
 
     let CreateChallengeResult {
         challenge,
         verifier_state,
     } = verificiation::create_challenge(&public);
 
-    let proof = creation::prove(&public, &challenge);
+    let proof = prover.prove(&challenge);
 
     let validation = verificiation::verify(&public, &verifier_state, &challenge, &proof);
 
@@ -50,7 +43,6 @@ struct VerifierState {
 }
 
 struct Public {
-    p: Poly<f64>,
     t: Poly<f64>,
     encryption_parameters: cryptography::EncryptionParameters,
 }
