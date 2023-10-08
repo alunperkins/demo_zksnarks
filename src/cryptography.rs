@@ -1,82 +1,25 @@
-use std::ops::Rem;
-
-use num::FromPrimitive;
-use num_bigint::BigUint;
 use polynomen::Poly;
-
-use crate::BigNumberType;
-
-pub(crate) struct EncryptionParameters {
-    modulus: BigNumberType,
-    g: BigNumberType,
-}
-
-pub(crate) fn get_encryption_parameters() -> EncryptionParameters {
-    let modulus: BigNumberType =
-        BigUint::parse_bytes(b"31", 10).expect("hard-coded number string should be valid");
-    let g: BigNumberType =
-        BigUint::parse_bytes(b"11", 10).expect("hard-coded number string should be valid");
-    return EncryptionParameters {
-        modulus: modulus,
-        g: g,
-    };
-}
-
-/// Make encrypted and clear numbers be different types for stronger compile-time checking
-#[derive(PartialEq, Eq, Hash)]
-pub(crate) struct EncryptedNumber {
-    val: BigNumberType,
-}
-
-impl EncryptedNumber {
-    /// homomorphically add two encrypted numbers
-    pub(crate) fn plus(
-        &self,
-        other: &EncryptedNumber,
-        encryption_parameters: &EncryptionParameters,
-    ) -> EncryptedNumber {
-        return EncryptedNumber {
-            val: (&self.val * &other.val).rem(&encryption_parameters.modulus),
-        };
-    }
-
-    /// homomorphically multiply an encrypted number by a cleartext number
-    pub(crate) fn times_by(
-        &self,
-        multiplier: f64, // must be integer-valued
-        encryption_parameters: &EncryptionParameters,
-    ) -> EncryptedNumber {
-        return EncryptedNumber {
-            val: self.val.modpow(
-                &BigUint::from_f64(multiplier)
-                    .expect("homomorphic_multiply should have multiplier be integer-valued..."),
-                &encryption_parameters.modulus,
-            ),
-        };
-    }
-}
-
-pub(crate) fn encrypt(
-    encryption_parameters: &EncryptionParameters,
-    cleartext: BigNumberType,
-) -> EncryptedNumber {
-    return EncryptedNumber {
-        val: encryption_parameters
-            .g
-            .modpow(&cleartext, &encryption_parameters.modulus),
-    };
-}
+use zksnark::groth16::{fr::G1Local, EllipticEncryptable, FrLocal};
 
 pub(crate) fn homomorphic_eval_polynomial(
-    encryption_parameters: &EncryptionParameters,
-    encrypted_s_powers: &Vec<EncryptedNumber>,
-    polynomial: &Poly<f64>,
-) -> EncryptedNumber {
+    encrypted_s_powers: &Vec<G1Local>,
+    polynomial: &Poly<usize>,
+) -> G1Local {
     return polynomial
         .coeffs()
         .into_iter()
         .zip(encrypted_s_powers)
-        .map(|(coeff, encrypted_s_power)| encrypted_s_power.times_by(coeff, encryption_parameters))
-        .reduce(|n1, n2| n1.plus(&n2, encryption_parameters))
-        .expect("Polynomial not empty");
+        .map(|(coeff, encrypted_s_power)| FrLocal::from(coeff).exp_encrypted_g1(*encrypted_s_power))
+        .sum();
+}
+
+pub(crate) fn homomorphic_multiply(e_a: G1Local, b: usize) -> G1Local {
+    return FrLocal::from(b).exp_encrypted_g1(e_a);
+}
+
+pub(crate) fn encrypt_g1(n: usize) -> G1Local {
+    return FrLocal::from(n).encrypt_g1();
+}
+pub(crate) fn mult_and_encrypt_g1(n: usize, m: usize) -> G1Local {
+    return (FrLocal::from(n) * FrLocal::from(m)).encrypt_g1();
 }

@@ -1,17 +1,16 @@
-use num::FromPrimitive;
-use num_bigint::BigUint;
+use zksnark::groth16::fr::G1Local;
 
 use crate::{
-    cryptography::{encrypt, EncryptedNumber},
+    cryptography::{encrypt_g1, homomorphic_multiply, mult_and_encrypt_g1},
     Challenge, Public, VerifierState, POLYNOMIAL_DEGREE,
 };
 
-fn choose_random_s() -> f64 {
-    return 17.0;
+fn choose_random_s() -> usize {
+    return 17;
 }
 
-fn choose_random_alpha() -> f64 {
-    return 19.0;
+fn choose_random_alpha() -> usize {
+    return 19;
 }
 
 pub(crate) fn verify(
@@ -22,35 +21,28 @@ pub(crate) fn verify(
 ) -> bool {
     let t_at_s = public.t.eval(&verifier_state.s);
 
-    let provers_p_has_roots_of_t = proof.encrypted_p_at_s
-        == proof
-            .encrypted_h_at_s
-            .times_by(t_at_s, &public.encryption_parameters);
+    let provers_p_has_roots_of_t =
+        proof.encrypted_p_at_s == homomorphic_multiply(proof.encrypted_h_at_s, t_at_s);
 
-    let proof_created_by_polynomial_evaluation_of_limited_degree = proof
-        .encrypted_p_at_s
-        .times_by(verifier_state.alpha, &public.encryption_parameters)
-        == proof.encrypted_alpha_times_p_at_s;
+    let proof_created_by_polynomial_evaluation_of_limited_degree =
+        homomorphic_multiply(proof.encrypted_p_at_s, verifier_state.alpha)
+            == proof.encrypted_alpha_times_p_at_s;
 
     return provers_p_has_roots_of_t && proof_created_by_polynomial_evaluation_of_limited_degree;
 }
 
 pub(crate) fn create_challenge(public: &Public) -> CreateChallengeResult {
-    let s = choose_random_s();
-    let s_big = BigUint::from_f64(s).expect("s should be integer-valued");
-    let alpha = choose_random_alpha();
-    let alpha_big = BigUint::from_f64(alpha).expect("Alpha should be integer-valued");
+    let s: usize = choose_random_s();
+    let alpha: usize = choose_random_alpha();
 
-    let encrypted_powers: Vec<EncryptedNumber> = (0..POLYNOMIAL_DEGREE)
-        .map(|k| s_big.pow(k))
-        .map(|s_to_kth_power: BigUint| encrypt(&public.encryption_parameters, s_to_kth_power))
+    let encrypted_powers: Vec<G1Local> = (0..POLYNOMIAL_DEGREE)
+        .map(|k| s.checked_pow(k).expect("not to overflow"))
+        .map(|s_to_kth_power: usize| encrypt_g1(s_to_kth_power))
         .collect();
 
-    let encrypted_powers_shifted: Vec<EncryptedNumber> = (0..POLYNOMIAL_DEGREE)
-        .map(|k| s_big.pow(k))
-        .map(|s_to_kth_power: BigUint| {
-            encrypt(&public.encryption_parameters, s_to_kth_power * &alpha_big)
-        })
+    let encrypted_powers_shifted: Vec<G1Local> = (0..POLYNOMIAL_DEGREE)
+        .map(|k| s.checked_pow(k).expect("not to overflow"))
+        .map(|s_to_kth_power: usize| mult_and_encrypt_g1(s_to_kth_power, alpha))
         .collect();
 
     return CreateChallengeResult {
