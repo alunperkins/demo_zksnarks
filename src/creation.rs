@@ -5,14 +5,6 @@ use crate::{
     Proof, Public,
 };
 
-pub(crate) fn cast_polynomial_to_f64(p: &Poly<usize>) -> Poly<f64> {
-    return Poly::new_from_coeffs_iter(p.coeffs().iter().map(|x| *x as f64));
-}
-
-pub(crate) fn cast_polynomial_to_usize(p: Poly<f64>) -> Poly<usize> {
-    return Poly::new_from_coeffs_iter(p.coeffs().iter().map(|x| *x as usize));
-}
-
 pub(crate) struct Prover<'a> {
     public: &'a Public,
     p: Poly<usize>,
@@ -24,9 +16,8 @@ impl<'a> Prover<'a> {
     }
 
     pub(crate) fn prove(&self, public: &Public) -> Proof {
-        let h: Poly<usize> = cast_polynomial_to_usize(
-            cast_polynomial_to_f64(&self.p) / cast_polynomial_to_f64(&self.public.t),
-        );
+        let h: Poly<usize> = exact_divide_integer_polynomial(&self.p, &self.public.t);
+
         return Proof {
             encrypted_p_at_s: cryptography::homomorphic_eval_polynomial(
                 &public.encrypted_s_powers,
@@ -62,4 +53,18 @@ impl<'a> Prover<'a> {
             ),
         };
     }
+}
+
+fn exact_divide_integer_polynomial(p_top: &Poly<usize>, p_bottom: &Poly<usize>) -> Poly<usize> {
+    return cast_polynomial_to_usize(
+        cast_polynomial_to_f64(p_top) / cast_polynomial_to_f64(p_bottom),
+    );
+}
+
+fn cast_polynomial_to_f64(p: &Poly<usize>) -> Poly<f64> {
+    return Poly::new_from_coeffs_iter(p.coeffs().iter().map(|x| *x as f64));
+}
+
+fn cast_polynomial_to_usize(p: Poly<f64>) -> Poly<usize> {
+    return Poly::new_from_coeffs_iter(p.coeffs().iter().map(|x| *x as usize));
 }
