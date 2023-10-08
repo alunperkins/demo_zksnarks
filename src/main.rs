@@ -23,10 +23,13 @@ fn main() {
     let prover = Prover::new(&public, p);
 
     let proof = prover.prove(&public);
+    let erroneous_proof = prover.erroneous_prove(&public);
 
     let validation = verificiation::verify(&public, &proof);
     println!("{}", validation);
 
+    let validation2 = verificiation::verify(&public, &erroneous_proof);
+    println!("{}", validation2);
 }
 
 struct Public {

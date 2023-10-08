@@ -16,6 +16,25 @@ pub(crate) fn homomorphic_eval_polynomial(
         .sum();
 }
 
+/// uses the wrong value for the third polynomial coefficient
+pub(crate) fn erroneous_homomorphic_eval_polynomial(
+    encrypted_s_powers: &Vec<G1Local>,
+    polynomial: &Poly<usize>,
+) -> G1Local {
+    return polynomial
+        .coeffs()
+        .into_iter()
+        .zip(encrypted_s_powers)
+        .enumerate()
+        .map(|(index, (coeff, encrypted_s_power))| {
+            if index == 2 {
+                homomorphic_multiply(encrypted_s_power, coeff + 1) // this is the error
+            } else {
+                homomorphic_multiply(encrypted_s_power, coeff)
+            }
+        })
+        .sum();
+}
 
 pub(crate) fn homomorphic_multiply(e_a: &G1Local, b: usize) -> G1Local {
     return FrLocal::from(b).exp_encrypted_g1(*e_a);
