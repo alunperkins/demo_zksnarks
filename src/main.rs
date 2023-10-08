@@ -6,7 +6,7 @@ mod verificiation;
 
 use crate::{creation::Prover, print_utils::printpoly, verificiation::CreateChallengeResult};
 use polynomen::Poly;
-use zksnark::groth16::fr::G1Local;
+use zksnark::groth16::fr::{G1Local, G2Local};
 
 const POLYNOMIAL_DEGREE: u32 = 5;
 
@@ -18,32 +18,21 @@ fn main() {
     let p: Poly<usize> = &t * &h;
     printpoly(&p);
 
-    let public = Public { t: t };
+    let CreateChallengeResult { public } = verificiation::create_challenge(t);
 
     let prover = Prover::new(&public, p);
 
-    let CreateChallengeResult {
-        challenge,
-        verifier_state,
-    } = verificiation::create_challenge(&public);
+    let proof = prover.prove(&public);
 
-    let proof = prover.prove(&challenge);
-
-    let validation = verificiation::verify(&public, &verifier_state, &challenge, &proof);
-
+    let validation = verificiation::verify(&public, &proof);
     println!("{}", validation);
-}
 
-struct VerifierState {
-    s: usize,
-    alpha: usize,
 }
 
 struct Public {
     t: Poly<usize>,
-}
-
-struct Challenge {
+    encrypted_t_at_s: G2Local,
+    encrypted_alpha: G2Local,
     encrypted_s_powers: Vec<G1Local>,
     encrypted_alpha_times_s_powers: Vec<G1Local>,
 }
