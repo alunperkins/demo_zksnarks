@@ -20,7 +20,7 @@ fn main() {
 
     let CreateChallengeResult { public } = verificiation::create_challenge(t);
 
-    let prover = Prover::new(&public, p);
+    let prover = Prover::new(p);
 
     let proof = prover.prove(&public);
     let erroneous_proof = prover.erroneous_prove(&public);

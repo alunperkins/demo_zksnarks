@@ -5,18 +5,17 @@ use crate::{
     Proof, Public,
 };
 
-pub(crate) struct Prover<'a> {
-    public: &'a Public,
+pub(crate) struct Prover {
     p: Poly<usize>,
 }
 
-impl<'a> Prover<'a> {
-    pub fn new(public: &'a Public, p: Poly<usize>) -> Self {
-        Self { public, p }
+impl Prover {
+    pub fn new(p: Poly<usize>) -> Self {
+        Self { p }
     }
 
     pub(crate) fn prove(&self, public: &Public) -> Proof {
-        let h: Poly<usize> = exact_divide_integer_polynomial(&self.p, &self.public.t);
+        let h: Poly<usize> = exact_divide_integer_polynomial(&self.p, &public.t);
 
         return Proof {
             encrypted_p_at_s: cryptography::homomorphic_eval_polynomial(
@@ -36,7 +35,7 @@ impl<'a> Prover<'a> {
 
     pub(crate) fn erroneous_prove(&self, public: &Public) -> Proof {
         let h: Poly<usize> = cast_polynomial_to_usize(
-            cast_polynomial_to_f64(&self.p) / cast_polynomial_to_f64(&self.public.t),
+            cast_polynomial_to_f64(&self.p) / cast_polynomial_to_f64(&public.t),
         );
         return Proof {
             encrypted_p_at_s: cryptography::homomorphic_eval_polynomial(
