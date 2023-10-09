@@ -21,7 +21,8 @@ impl Prover {
     pub(crate) fn prove(&self, public: &PublicData) -> Proof {
         let random_entropy = 7 as usize;
 
-        let h: Poly<usize> = exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
+        let h: Poly<usize> =
+            exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
         let crs = &public.crs;
 
         return Proof {
@@ -46,7 +47,8 @@ impl Prover {
     pub(crate) fn erroneous_prove(&self, public: &PublicData) -> Proof {
         let random_entropy = 7 as usize;
 
-        let h: Poly<usize> = exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
+        let h: Poly<usize> =
+            exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
         let crs = &public.crs;
 
         return Proof {

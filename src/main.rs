@@ -49,10 +49,10 @@ fn main() {
     // proof is validated using only public data and proof data
 
     let validation = verificiation::verify(&public, &proof);
-    println!("{}", validation);
+    println!("Valid proof returns true: {}", validation);
 
     let validation2 = verificiation::verify(&public, &erroneous_proof);
-    println!("{}", validation2);
+    println!("Erroneous proof returns false: {}", validation2);
 }
 
 struct Proof {
