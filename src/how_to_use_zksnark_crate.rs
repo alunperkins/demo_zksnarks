@@ -10,10 +10,6 @@ mod tests {
 
     #[test]
     fn homomorphic_addition() {
-        // let x5g1 = x5.encrypt_g1();
-        // let x6g2 = x5.encrypt_g2();
-        // let p1 = FrLocal::pairing(x5g1, x6g2);
-
         let a = FrLocal::from(1024);
         let b = FrLocal::from(3333);
         let a_plus_b = FrLocal::from(4357);

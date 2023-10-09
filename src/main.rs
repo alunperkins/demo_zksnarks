@@ -1,10 +1,10 @@
-mod creation;
+mod prover;
+mod crs_player;
 mod cryptography;
 mod how_to_use_zksnark_crate;
-mod print_utils;
 mod verificiation;
 
-use crate::{creation::Prover, print_utils::printpoly, verificiation::CreateChallengeResult};
+use crate::{prover::Prover, crs_player::CrsPlayer};
 use polynomen::Poly;
 use zksnark::groth16::fr::{G1Local, G2Local};
 
@@ -12,15 +12,30 @@ const POLYNOMIAL_DEGREE: u32 = 5;
 
 fn main() {
     let t: Poly<usize> = Poly::new_from_coeffs(&[3, 4, 5]);
-    printpoly(&t);
     let h: Poly<usize> = Poly::new_from_coeffs(&[6, 7]);
-    printpoly(&h);
     let p: Poly<usize> = &t * &h;
-    printpoly(&p);
-
-    let CreateChallengeResult { public } = verificiation::create_challenge(t);
 
     let prover = Prover::new(p);
+    let alice = CrsPlayer::new(12, 13);
+    let bob = CrsPlayer::new(14, 15);
+    let charlie = CrsPlayer::new(16, 17);
+
+    let mut transcript = Transcript {
+        history: vec![alice.start_crs_ceremony()],
+    };
+
+    transcript
+        .history
+        .push(bob.continue_crs_ceremony(&transcript));
+
+    transcript
+        .history
+        .push(charlie.continue_crs_ceremony(&transcript));
+
+    let public = Public {
+        t: t,
+        crs: transcript.history.pop().expect("non-empty").accumulator,
+    };
 
     let proof = prover.prove(&public);
     let erroneous_proof = prover.erroneous_prove(&public);
@@ -34,14 +49,34 @@ fn main() {
 
 struct Public {
     t: Poly<usize>,
-    encrypted_t_at_s: G2Local,
-    encrypted_alpha: G2Local,
-    encrypted_s_powers: Vec<G1Local>,
-    encrypted_alpha_times_s_powers: Vec<G1Local>,
+    crs: CRS,
+}
+
+struct Transcript {
+    history: Vec<CrsCeremonyValues>,
+}
+
+struct CrsCeremonyValues {
+    accumulator: CRS,
+    step: CrsStepValues,
+}
+
+struct CrsStepValues {
+    encrypted1_s_powers: Vec<G1Local>,
+    encrypted1_alpha: G1Local,
+    encrypted2_alpha_times_s_powers: Vec<G2Local>,
+}
+
+struct CRS {
+    // encrypted1_alpha: G2Local,
+    encrypted2_alpha: G2Local,
+    encrypted2_s_powers: Vec<G2Local>,
+    encrypted1_s_powers: Vec<G1Local>,
+    encrypted1_alpha_times_s_powers: Vec<G1Local>,
 }
 
 struct Proof {
-    encrypted_h_at_s: G1Local,
-    encrypted_p_at_s: G1Local,
-    encrypted_alpha_times_p_at_s: G1Local,
+    encrypted1_h_at_s: G1Local,
+    encrypted1_p_at_s: G1Local,
+    encrypted1_alpha_times_p_at_s: G1Local,
 }
