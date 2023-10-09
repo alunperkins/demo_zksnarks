@@ -5,12 +5,12 @@ use crate::{
         crypto_pairing, encrypt1, encrypt2, homomorphic1_multiply, homomorphic2_multiply,
         mult_and_encrypt1, mult_and_encrypt2,
     },
-    CrsCeremonyValues, CrsStepValues, Transcript, CRS, POLYNOMIAL_DEGREE,
+    CrsCeremonyStep, CrsCeremonyTranscript, CrsCeremonyValues, CRS, POLYNOMIAL_DEGREE,
 };
 
 pub(crate) struct CrsPlayer {
-    s: usize,
-    alpha: usize,
+    s: usize,     // secret value at which the polynomial is to be evaluated
+    alpha: usize, // value for scaling the polynomial as part proof/validation algorithm for restricting how the prover generates the proof
 }
 
 impl CrsPlayer {
@@ -18,7 +18,7 @@ impl CrsPlayer {
         Self { s, alpha }
     }
 
-    fn get_crs_step_values(&self) -> CrsStepValues {
+    fn get_crs_step_values(&self) -> CrsCeremonyStep {
         let step_encrypted1_s_powers: Vec<G1Local> = (0..POLYNOMIAL_DEGREE + 1)
             .map(|k| self.s.checked_pow(k).expect("not to overflow"))
             .map(|s_to_kth_power: usize| encrypt1(s_to_kth_power))
@@ -29,7 +29,7 @@ impl CrsPlayer {
             .map(|s_to_kth_power: usize| mult_and_encrypt2(s_to_kth_power, self.alpha))
             .collect();
 
-        return CrsStepValues {
+        return CrsCeremonyStep {
             encrypted1_s_powers: step_encrypted1_s_powers,
             encrypted1_alpha: encrypt1(self.alpha),
             encrypted2_alpha_times_s_powers: step_encrypted2_alpha_times_s_powers,
@@ -54,7 +54,7 @@ impl CrsPlayer {
             .map(|s_to_kth_power: usize| mult_and_encrypt1(s_to_kth_power, self.alpha))
             .collect();
 
-        return CrsCeremonyValues {
+        let retval = CrsCeremonyValues {
             accumulator: CRS {
                 encrypted2_alpha,
                 encrypted2_s_powers,
@@ -63,16 +63,33 @@ impl CrsPlayer {
             },
             step: self.get_crs_step_values(),
         };
+
+        self.secure_erase_my_secret_s_and_alpha_values();
+
+        return retval;
     }
 
-    pub(crate) fn continue_crs_ceremony(&self, transcript: &Transcript) -> CrsCeremonyValues {
-        validate_transcript(transcript);
-        return self.mix_my_secrets_into_the_transcript(transcript);
+    ///
+    pub(crate) fn continue_crs_ceremony(
+        &self,
+        transcript: &CrsCeremonyTranscript,
+    ) -> CrsCeremonyValues {
+        validate_ceremony_transcript(transcript);
+        let retval = self.mix_my_secrets_into_ceremony_transcript(transcript);
+
+        self.secure_erase_my_secret_s_and_alpha_values();
+
+        return retval;
     }
 
-    fn mix_my_secrets_into_the_transcript(&self, transcript: &Transcript) -> CrsCeremonyValues {
+    fn mix_my_secrets_into_ceremony_transcript(
+        &self,
+        transcript: &CrsCeremonyTranscript,
+    ) -> CrsCeremonyValues {
         let crs_current = &transcript.history.last().expect("non-empty").accumulator;
+
         let new_encrypted2_alpha = homomorphic2_multiply(&crs_current.encrypted2_alpha, self.alpha);
+
         let new_encrypted2_s_powers: Vec<G2Local> = (0..POLYNOMIAL_DEGREE + 1)
             .map(|k| self.s.checked_pow(k).expect("not to overflow"))
             .zip(&crs_current.encrypted2_s_powers)
@@ -122,9 +139,13 @@ impl CrsPlayer {
             step: self.get_crs_step_values(),
         };
     }
+
+    fn secure_erase_my_secret_s_and_alpha_values(&self) {
+        // this function is just for show, it doesn't really apply to this project as it is at the moment
+    }
 }
 
-fn validate_transcript(transcript: &Transcript) -> () {
+fn validate_ceremony_transcript(transcript: &CrsCeremonyTranscript) -> () {
     let all_internally_consistent = transcript
         .history
         .iter()

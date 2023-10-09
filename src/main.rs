@@ -11,16 +11,20 @@ use zksnark::groth16::fr::{G1Local, G2Local};
 const POLYNOMIAL_DEGREE: u32 = 5;
 
 fn main() {
-    let t: Poly<usize> = Poly::new_from_coeffs(&[3, 4, 5]);
-    let h: Poly<usize> = Poly::new_from_coeffs(&[6, 7]);
-    let p: Poly<usize> = &t * &h;
+    let target_polynomial: Poly<usize> = Poly::new_from_coeffs(&[3, 4, 5]);
 
-    let prover = Prover::new(p, 7);
+    // Create Prover
+    let ratio_polynomial: Poly<usize> = Poly::new_from_coeffs(&[6, 7]);
+    let provers_polynomial: Poly<usize> = &target_polynomial * &ratio_polynomial;
+    let prover = Prover::new(provers_polynomial);
+
+    // Create CRS ceremony participants
     let alice = CrsPlayer::new(12, 13);
     let bob = CrsPlayer::new(14, 15);
     let charlie = CrsPlayer::new(16, 17);
 
-    let mut transcript = Transcript {
+    // CRS ceremony
+    let mut transcript = CrsCeremonyTranscript {
         history: vec![alice.start_crs_ceremony()],
     };
 
@@ -32,13 +36,17 @@ fn main() {
         .history
         .push(charlie.continue_crs_ceremony(&transcript));
 
-    let public = Public {
-        t: t,
+    let public = PublicData {
+        target_polynomial,
         crs: transcript.history.pop().expect("non-empty").accumulator,
     };
 
+    // Prover creates a proof using only public data and their secret data in `self`
+
     let proof = prover.prove(&public);
     let erroneous_proof = prover.erroneous_prove(&public);
+
+    // proof is validated using only public data and proof data
 
     let validation = verificiation::verify(&public, &proof);
     println!("{}", validation);
@@ -47,36 +55,36 @@ fn main() {
     println!("{}", validation2);
 }
 
-struct Public {
-    t: Poly<usize>,
+struct Proof {
+    encrypted1_ratio_poly_at_s: G1Local,
+    encrypted1_secret_poly_at_s: G1Local,
+    encrypted1_alpha_times_secret_poly_at_s: G1Local,
+}
+
+struct PublicData {
+    target_polynomial: Poly<usize>,
     crs: CRS,
 }
 
-struct Transcript {
-    history: Vec<CrsCeremonyValues>,
-}
-
-struct CrsCeremonyValues {
-    accumulator: CRS,
-    step: CrsStepValues,
-}
-
-struct CrsStepValues {
-    encrypted1_s_powers: Vec<G1Local>,
-    encrypted1_alpha: G1Local,
-    encrypted2_alpha_times_s_powers: Vec<G2Local>,
-}
-
 struct CRS {
-    // encrypted1_alpha: G2Local,
+    // Common Reference String
     encrypted2_alpha: G2Local,
     encrypted2_s_powers: Vec<G2Local>,
     encrypted1_s_powers: Vec<G1Local>,
     encrypted1_alpha_times_s_powers: Vec<G1Local>,
 }
 
-struct Proof {
-    encrypted1_h_at_s: G1Local,
-    encrypted1_p_at_s: G1Local,
-    encrypted1_alpha_times_p_at_s: G1Local,
+struct CrsCeremonyTranscript {
+    history: Vec<CrsCeremonyValues>,
+}
+
+struct CrsCeremonyValues {
+    accumulator: CRS,
+    step: CrsCeremonyStep,
+}
+
+struct CrsCeremonyStep {
+    encrypted1_s_powers: Vec<G1Local>,
+    encrypted1_alpha: G1Local,
+    encrypted2_alpha_times_s_powers: Vec<G2Local>,
 }

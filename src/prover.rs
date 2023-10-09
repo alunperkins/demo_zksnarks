@@ -4,58 +4,66 @@ use crate::{
     cryptography::{
         erroneous1_homomorphic_eval_polynomial, homomorphic1_eval_polynomial, homomorphic1_multiply,
     },
-    Proof, Public,
+    Proof, PublicData,
 };
 
 pub(crate) struct Prover {
-    p: Poly<usize>,
-    delta: usize,
+    my_secret_polynomial: Poly<usize>,
 }
 
 impl Prover {
-    pub fn new(p: Poly<usize>, delta: usize) -> Self {
-        Self { p, delta }
+    pub fn new(p: Poly<usize>) -> Self {
+        Self {
+            my_secret_polynomial: p,
+        }
     }
 
-    pub(crate) fn prove(&self, public: &Public) -> Proof {
-        let h: Poly<usize> = exact_divide_integer_polynomial(&self.p, &public.t);
+    pub(crate) fn prove(&self, public: &PublicData) -> Proof {
+        let random_entropy = 7 as usize;
+
+        let h: Poly<usize> = exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
         let crs = &public.crs;
 
         return Proof {
-            encrypted1_p_at_s: homomorphic1_multiply(
-                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.p),
-                self.delta,
+            encrypted1_secret_poly_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.my_secret_polynomial),
+                random_entropy,
             ),
-            encrypted1_h_at_s: homomorphic1_multiply(
+            encrypted1_ratio_poly_at_s: homomorphic1_multiply(
                 &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &h),
-                self.delta,
+                random_entropy,
             ),
-            encrypted1_alpha_times_p_at_s: homomorphic1_multiply(
-                &homomorphic1_eval_polynomial(&crs.encrypted1_alpha_times_s_powers, &self.p),
-                self.delta,
+            encrypted1_alpha_times_secret_poly_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(
+                    &crs.encrypted1_alpha_times_s_powers,
+                    &self.my_secret_polynomial,
+                ),
+                random_entropy,
             ),
         };
     }
 
-    pub(crate) fn erroneous_prove(&self, public: &Public) -> Proof {
-        let h: Poly<usize> = exact_divide_integer_polynomial(&self.p, &public.t);
+    pub(crate) fn erroneous_prove(&self, public: &PublicData) -> Proof {
+        let random_entropy = 7 as usize;
+
+        let h: Poly<usize> = exact_divide_integer_polynomial(&self.my_secret_polynomial, &public.target_polynomial);
         let crs = &public.crs;
 
         return Proof {
-            encrypted1_p_at_s: homomorphic1_multiply(
-                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.p),
-                self.delta,
+            encrypted1_secret_poly_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.my_secret_polynomial),
+                random_entropy,
             ),
-            encrypted1_h_at_s: homomorphic1_multiply(
+            encrypted1_ratio_poly_at_s: homomorphic1_multiply(
                 &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &h),
-                self.delta,
+                random_entropy,
             ),
-            encrypted1_alpha_times_p_at_s: homomorphic1_multiply(
+            encrypted1_alpha_times_secret_poly_at_s: homomorphic1_multiply(
                 &erroneous1_homomorphic_eval_polynomial(
                     &crs.encrypted1_alpha_times_s_powers,
-                    &self.p,
+                    &self.my_secret_polynomial,
                 ),
-                self.delta,
+                random_entropy,
             ),
         };
     }

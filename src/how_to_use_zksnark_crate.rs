@@ -1,12 +1,8 @@
+// the zksnark crate isn't totally totally obvious how to use it, but these tests can illustrate some of its functionality.
+
 #[cfg(test)]
 mod tests {
     use zksnark::groth16::{fr::GtLocal, EllipticEncryptable, FrLocal};
-
-    // #[test]
-    // fn homomorphic_addition() {
-    //     let mut rng = &mut rand::thread_rng();
-    //     let alice_sk = bn::Fr::random(&mut rng);
-    // }
 
     #[test]
     fn homomorphic_addition() {
@@ -18,7 +14,7 @@ mod tests {
         let e_b = b.encrypt_g1();
         let e_a_plus_b = a_plus_b.encrypt_g1();
 
-        assert!(e_a_plus_b == e_a + e_b);
+        assert!(e_a_plus_b == e_a + e_b); // G1Local type puts its homomorphic logic in its implementation of the Add trait
     }
 
     #[test]
@@ -50,7 +46,7 @@ mod tests {
         assert!(pair(1024, 33 * 101) == pair(1024 * 33, 101));
 
         // homomorphic addition
-        assert!(pair(1025, 3333) + pair(1026, 4444) == pair(1025 * 3333 + 1026 * 4444, 1));
+        assert!(pair(1025, 3333) + pair(1026, 4444) == pair(1025 * 3333 + 1026 * 4444, 1)); // GtLocal type puts its homomorphic logic in its implementation of the Add trait
         assert!(
             pair(1025, 3333) + pair(1026, 4444)
                 == pair(1025, 3333) + pair(1026, 2222) + pair(1026, 2222)
