@@ -1,14 +1,20 @@
 use polynomen::Poly;
 
-use crate::{cryptography::{homomorphic1_eval_polynomial, erroneous1_homomorphic_eval_polynomial}, Proof, Public};
+use crate::{
+    cryptography::{
+        erroneous1_homomorphic_eval_polynomial, homomorphic1_eval_polynomial, homomorphic1_multiply,
+    },
+    Proof, Public,
+};
 
 pub(crate) struct Prover {
     p: Poly<usize>,
+    delta: usize,
 }
 
 impl Prover {
-    pub fn new(p: Poly<usize>) -> Self {
-        Self { p }
+    pub fn new(p: Poly<usize>, delta: usize) -> Self {
+        Self { p, delta }
     }
 
     pub(crate) fn prove(&self, public: &Public) -> Proof {
@@ -16,17 +22,17 @@ impl Prover {
         let crs = &public.crs;
 
         return Proof {
-            encrypted1_p_at_s: homomorphic1_eval_polynomial(
-                &crs.encrypted1_s_powers,
-                &self.p,
+            encrypted1_p_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.p),
+                self.delta,
             ),
-            encrypted1_h_at_s: homomorphic1_eval_polynomial(
-                &crs.encrypted1_s_powers,
-                &h,
+            encrypted1_h_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &h),
+                self.delta,
             ),
-            encrypted1_alpha_times_p_at_s: homomorphic1_eval_polynomial(
-                &crs.encrypted1_alpha_times_s_powers,
-                &self.p,
+            encrypted1_alpha_times_p_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_alpha_times_s_powers, &self.p),
+                self.delta,
             ),
         };
     }
@@ -36,17 +42,20 @@ impl Prover {
         let crs = &public.crs;
 
         return Proof {
-            encrypted1_p_at_s: homomorphic1_eval_polynomial(
-                &crs.encrypted1_s_powers,
-                &self.p,
+            encrypted1_p_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &self.p),
+                self.delta,
             ),
-            encrypted1_h_at_s: homomorphic1_eval_polynomial(
-                &crs.encrypted1_s_powers,
-                &h,
+            encrypted1_h_at_s: homomorphic1_multiply(
+                &homomorphic1_eval_polynomial(&crs.encrypted1_s_powers, &h),
+                self.delta,
             ),
-            encrypted1_alpha_times_p_at_s: erroneous1_homomorphic_eval_polynomial(
-                &crs.encrypted1_alpha_times_s_powers,
-                &self.p,
+            encrypted1_alpha_times_p_at_s: homomorphic1_multiply(
+                &erroneous1_homomorphic_eval_polynomial(
+                    &crs.encrypted1_alpha_times_s_powers,
+                    &self.p,
+                ),
+                self.delta,
             ),
         };
     }

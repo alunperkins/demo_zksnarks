@@ -1,10 +1,10 @@
-mod prover;
 mod crs_player;
 mod cryptography;
 mod how_to_use_zksnark_crate;
+mod prover;
 mod verificiation;
 
-use crate::{prover::Prover, crs_player::CrsPlayer};
+use crate::{crs_player::CrsPlayer, prover::Prover};
 use polynomen::Poly;
 use zksnark::groth16::fr::{G1Local, G2Local};
 
@@ -15,7 +15,7 @@ fn main() {
     let h: Poly<usize> = Poly::new_from_coeffs(&[6, 7]);
     let p: Poly<usize> = &t * &h;
 
-    let prover = Prover::new(p);
+    let prover = Prover::new(p, 7);
     let alice = CrsPlayer::new(12, 13);
     let bob = CrsPlayer::new(14, 15);
     let charlie = CrsPlayer::new(16, 17);
